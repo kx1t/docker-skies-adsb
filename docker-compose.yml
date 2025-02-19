@@ -1,0 +1,17 @@
+services:
+  skies-adsb:
+    image: ghcr.io/sdr-enthusiasts/docker-skies-adsb
+    container_name: skies-adsb
+    hostname: skies-adsb
+    restart: always
+    environment:
+      - LAT=xx.xxxxx
+      - LON=xx.xxxxx
+      - SBS_SOURCE=ultrafeeder:30003
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./skies-adsb/data:/skies-adsb/map
+      - ./skies-adsb/map-data:/skies-adsb/public/map-data
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"

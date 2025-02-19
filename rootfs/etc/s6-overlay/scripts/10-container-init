@@ -1,0 +1,19 @@
+#!/command/with-contenv bash
+# shellcheck shell=bash disable=SC1091,SC2154
+source /scripts/common
+
+"${s6wrap[@]}" echo "[INFO] Starting Skies-ADSB version $(cat /.CONTAINER_VERSION)"
+
+# configure SBS source
+if [[ -z "$SBS_SOURCE" ]]; then
+	"${s6wrap[@]}" echo "[ERROR] SBS_SOURCE environment variable is not set. Cannot continue - container halted!"
+	exec sleep infinity
+else
+	mkdir -p /skies-adsb/src
+	if [[ -f /skies-adsb/src/.env ]]; then
+	  sed -i 's|^\(VITE_USE_EXISTING_ADSB=\).*$|\1'"$SBS_SOURCE"'|g' /skies-adsb/src/.env
+	else
+		echo "VITE_USE_EXISTING_ADSB=$SBS_SOURCE" >> /skies-adsb/src/.env
+	fi
+fi
+

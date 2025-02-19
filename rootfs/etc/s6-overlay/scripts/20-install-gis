@@ -1,0 +1,102 @@
+#!/command/with-contenv bash
+# shellcheck shell=bash disable=SC1091,SC2154
+source /scripts/common
+
+"${s6wrap[@]}" echo "[INFO] Checking if Vector and Shapefiles are present"
+
+
+FAA_SHAPEFILE="${FAA_SHAPEFILE:-https://hub.arcgis.com/api/v3/datasets/c6a62360338e408cb1512366ad61559e_0/downloads/data?format=shp&spatialRefId=4269&where=1%3D1}"
+
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_cultural/ne_10m_admin_1_states_provinces.shp)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_cultural/ne_10m_airports.shp)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_cultural/ne_10m_urban_areas.shp)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_cultural/ne_10m_admin_2_counties.shp)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_cultural/ne_10m_roads.shp)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_physical/ne_10m_lakes.shp)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_physical/ne_10m_rivers_lake_centerlines.shp)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/110m_cultural/ne_110m_admin_1_states_provinces.shp)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/110m_physical/ne_110m_lakes.shp)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/110m_physical/ne_110m_rivers_lake_centerlines.shp)
+
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_cultural/ne_10m_admin_1_states_provinces.shx)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_cultural/ne_10m_airports.shx)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_cultural/ne_10m_urban_areas.shx)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_cultural/ne_10m_admin_2_counties.shx)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_cultural/ne_10m_roads.shx)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_physical/ne_10m_lakes.shx)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/10m_physical/ne_10m_rivers_lake_centerlines.shx)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/110m_cultural/ne_110m_admin_1_states_provinces.shx)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/110m_physical/ne_110m_lakes.shx)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/110m_physical/ne_110m_rivers_lake_centerlines.shx)
+
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_admin_1_states_provinces.geojson)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_airports.geojson)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_urban_areas.geojson)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_admin_2_counties.geojson)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_roads.geojson)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_lakes.geojson)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_rivers_lake_centerlines.geojson)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_110m_admin_1_states_provinces.geojson)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_110m_lakes.geojson)
+vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_110m_rivers_lake_centerlines.geojson)
+
+if [[ -z "$LAT" ]] || [[ -z "${LON:-$LONG}" ]]; then
+  "${s6wrap[@]}" echo "[ERROR] Must set your coordinates in \$LAT and \$LON. Cannot continue - container halted!"
+  # exec sleep infinity
+fi
+
+if [[ -f /skies-adsb/src/.env ]] && [[ -f /skies-adsb/public/map-data/aerodromes.geojson ]]; then
+  # we have files that should be OK as long as the LAT/LON hasn't changed
+  source /skies-adsb/src/.env
+  if [[ "$VITE_DEFAULT_ORIGIN_LATITUDE" == "$LAT" ]] && [[ "$VITE_DEFAULT_ORIGIN_LONGITUDE" == "${LON:-$LONG}" ]]; then
+    "${s6wrap[@]}" echo "[INFO] All vector and shapefiles have been installed previously. Continuing..."
+    exit 0
+  fi
+else
+  "${s6wrap[@]}" echo "[INFO] Need to download and install vector and shapefiles. This may take a while!"
+fi
+
+for v in "${vector[@]}"; do
+  dir="$(awk -F/ '{print $9}' <<<  "$v")"
+  if [[ ! -f "/skies-adsb/maps/data/$dir/${v##*/}" ]]; then
+  "${s6wrap[@]}" echo "[INFO] Downloading ${v##*/}"
+    mkdir -p "/skies-adsb/maps/data/$dir"
+    if ! curl -sSL "$v" -o "/skies-adsb/maps/data/$dir/${v##*/}"; then
+      "${s6wrap[@]}" echo "[ERROR] Couldn't download ${v##*/}. Cannot continue - container halted!"
+      rm -f "/skies-adsb/maps/data/$dir/${v##*/}"
+      #exec sleep infinity
+    fi
+  fi
+done
+
+if [[ ! -f /skies-adsb/maps/data/Class_Airspace.zip ]]; then
+  "${s6wrap[@]}" echo "[INFO] Downloading Class_Airspace.zip"
+  if ! curl -sSL "${FAA_SHAPEFILE}" -o /skies-adsb/maps/data/Class_Airspace.zip; then
+    "${s6wrap[@]}" echo "[ERROR] Couldn't download 10m Class Airspace Shapefile from ${FAA_SHAPEFILE}"
+    rm -f /skies-adsb/maps/data/Class_Airspace.zip
+  else
+    "${s6wrap[@]}" echo "[INFO] Unpacking Class_Airspace.zip"
+    unzip -qq -d /skies-adsb/maps/data/Class_Airspace /skies-adsb/maps/data/Class_Airspace.zip
+  fi
+fi
+
+# write coords to env file:
+mkdir -p /skies-adsb/src
+if [[ -f /skies-adsb/src/.env ]]; then
+  sed -i 's|^\(VITE_DEFAULT_ORIGIN_LATITUDE=.*\)$|#\1|g' /skies-adsb/src/.env
+  sed -i 's|^\(VITE_DEFAULT_ORIGIN_LONGITUDE=.*\)$|#\1|g' /skies-adsb/src/.env
+fi
+cat <<EOF >> /skies-adsb/src/.env
+VITE_DEFAULT_ORIGIN_LATITUDE=$LAT
+VITE_DEFAULT_ORIGIN_LONGITUDE=${LON:-$LONG}
+EOF
+
+"${s6wrap[@]}" echo "[INFO] Building Map Layers"
+cd /skies-adsb/maps || true
+sed -i 's|10m_cultural/10m_cultural|10m_cultural|g' build-map-layers.py # needed to make this work -- weirdness in py file
+if ! "${s6wrap[@]}" ./build-map-layers.sh; then
+"${s6wrap[@]}" echo "[ERROR] Building Map Layers failed. Cannot continue - container halted!"
+  # exec sleep infinity
+fi
+
+"${s6wrap[@]}" echo "[INFO] Installation of vector and shapefiles was successful"
