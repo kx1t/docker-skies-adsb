@@ -20,15 +20,13 @@
 
 FROM ghcr.io/sdr-enthusiasts/docker-baseimage:base
 
-LABEL org.opencontainers.image.source = "https://github.com/sdr-enthusiasts/docker-skies-adsb"
+#LABEL org.opencontainers.image.source = "https://github.com/sdr-enthusiasts/docker-skies-adsb"
 
 ENV BASH_ENV /home/.bash_env
 
 SHELL ["/bin/bash", "-x", "-o", "pipefail", "-c"]
 # hadolint ignore=DL3008,SC2086,SC2039,SC2068
 RUN \
-    --mount=type=bind,from=build,source=/,target=/build \
-    export BASH_ENV="/root/.bash_env" && \
     # define required packages
     TEMP_PACKAGES=() && \
     KEPT_PACKAGES=() && \
@@ -78,8 +76,13 @@ RUN \
     # add files from the build container:
     echo "alias dir=\"ls -alsv\"" >> /root/.bashrc && \
     echo "alias nano=\"nano -l\"" >> /root/.bashrc && \
-    #
-    # clean up
+    # Add Container Version:
+    # cd / && \
+    # branch="##BRANCH##" && 
+    # if [[ "${branch:0:1}" == "#" ]]; then branch="main" || true; } && \
+    # git clone --depth=1 -b $branch https://github.com/sdr-enthusiasts/docker-vesselalert.git && \
+    # cd docker-vesselalert && \
+    # echo "$(TZ=UTC date +%Y%m%d-%H%M%S)_$(git rev-parse --short HEAD)_$(git branch --show-current)" > /.CONTAINER_VERSION
     # Clean up
     echo Uninstalling $TEMP_PACKAGES && \
     apt-get remove -y -q ${TEMP_PACKAGES[@]} && \

@@ -8,6 +8,8 @@ services:
       - LAT=xx.xxxxx
       - LON=xx.xxxxx
       - SBS_SOURCE=ultrafeeder:30003
+    ports:
+      - 5173:5173
     tmpfs:
       - /tmp
     volumes:
