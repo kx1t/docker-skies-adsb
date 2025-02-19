@@ -1,23 +1,3 @@
-# FROM ghcr.io/sdr-enthusiasts/docker-baseimage:base AS build
-#
-# SHELL ["/bin/bash", "-x", "-o", "pipefail", "-c"]
-# RUN \
-#     --mount=type=bind,source=./,target=/ghrepo/  \
-#     apt-get update -y && \
-#     apt-get install -q -o Dpkg::Options::="--force-confnew" -y \
-#         git gcc && \
-#     mkdir -p /src && \
-#     cd /src && \
-#     cp -f /ghrepo/src/distance.c . && \
-#     gcc -static distance.c -o distance -lm -Ofast && \
-#     # Add Container Version:
-#     cd / && \
-#     branch="##BRANCH##" && \
-#     { [[ "${branch:0:1}" == "#" ]] && branch="main" || true; } && \
-#     git clone --depth=1 -b $branch https://github.com/sdr-enthusiasts/docker-vesselalert.git && \
-#     cd docker-vesselalert && \
-#     echo "$(TZ=UTC date +%Y%m%d-%H%M%S)_$(git rev-parse --short HEAD)_$(git branch --show-current)" > /.CONTAINER_VERSION
-
 FROM ghcr.io/sdr-enthusiasts/docker-baseimage:base
 
 #LABEL org.opencontainers.image.source = "https://github.com/sdr-enthusiasts/docker-skies-adsb"
@@ -36,7 +16,7 @@ RUN \
     KEPT_PACKAGES+=(python3-minimal) && \
     KEPT_PACKAGES+=(python3-pip) && \
     TEMP_PACKAGES+=(git) && \
-    TEMP_PACKAGES+=(curl) && \
+    KEPT_PACKAGES+=(curl) && \
     TEMP_PACKAGES+=(unzip) && \
     KEPT_PACKAGES+=(python3-flask) && \
     KEPT_PACKAGES+=(python3-flask-cors) && \
