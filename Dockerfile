@@ -2,7 +2,10 @@ FROM ghcr.io/sdr-enthusiasts/docker-baseimage:base
 
 #LABEL org.opencontainers.image.source = "https://github.com/sdr-enthusiasts/docker-skies-adsb"
 
-ENV BASH_ENV /home/.bash_env
+ENV BASH_ENV=/home/.bash_env \
+    __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=true
+
+ARG BASH_ENV=/home/.bash_env 
 
 SHELL ["/bin/bash", "-x", "-o", "pipefail", "-c"]
 # hadolint ignore=DL3008,SC2086,SC2039,SC2068
