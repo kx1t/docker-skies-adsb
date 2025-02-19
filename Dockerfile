@@ -32,7 +32,7 @@ RUN \
         "${KEPT_PACKAGES[@]}" \
         "${TEMP_PACKAGES[@]}" \
         && \
-    pip3 install --break-system-packages "${PIP_PACKAGES[@]}" && \
+    pip3 install --no-cache-dir --break-system-packages "${PIP_PACKAGES[@]}" && \
     #
     #
     # Install NVM:
