@@ -12,8 +12,6 @@ else
 	mkdir -p /skies-adsb/src
 	if [[ -f /skies-adsb/src/.env ]]; then
 	  sed -i 's|^\(VITE_USE_EXISTING_ADSB=\).*$|\1'"$SBS_SOURCE"'|g' /skies-adsb/src/.env
-	else
-		echo "VITE_USE_EXISTING_ADSB=$SBS_SOURCE" >> /skies-adsb/src/.env
 	fi
+	echo "VITE_USE_EXISTING_ADSB=$SBS_SOURCE" >> /skies-adsb/src/.env
 fi
-
