@@ -29,17 +29,6 @@ vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/hea
 vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/110m_physical/ne_110m_lakes.shx)
 vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/110m_physical/ne_110m_rivers_lake_centerlines.shx)
 
-# vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_admin_1_states_provinces.geojson)
-# vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_airports.geojson)
-# vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_urban_areas.geojson)
-# vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_admin_2_counties.geojson)
-# vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_roads.geojson)
-# vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_lakes.geojson)
-# vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_10m_rivers_lake_centerlines.geojson)
-# vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_110m_admin_1_states_provinces.geojson)
-# vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_110m_lakes.geojson)
-# vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/geojson/ne_110m_rivers_lake_centerlines.geojson)
-
 if [[ -z "$LAT" ]] || [[ -z "${LON:-$LONG}" ]]; then
   "${s6wrap[@]}" echo "[ERROR] Must set your coordinates in \$LAT and \$LON. Cannot continue - container halted!"
   # exec sleep infinity
@@ -94,6 +83,7 @@ EOF
 "${s6wrap[@]}" echo "[INFO] Building Map Layers"
 cd /skies-adsb/maps || true
 sed -i 's|10m_cultural/10m_cultural|10m_cultural|g' build-map-layers.py # needed to make this work -- weirdness in py file
+sed -i 's|^python3 build-map-layers.py|python3 -u build-map-layers.py|g' ./build-map-layers.sh # make sure Python flushes buffers
 if ! "${s6wrap[@]}" stdbuf -oL ./build-map-layers.sh; then
 "${s6wrap[@]}" echo "[ERROR] Building Map Layers failed. Cannot continue - container halted!"
   # exec sleep infinity

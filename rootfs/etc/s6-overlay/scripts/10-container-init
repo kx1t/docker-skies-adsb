@@ -10,10 +10,13 @@ if [[ -z "$SBS_SOURCE" ]]; then
 	exec sleep infinity
 else
 	mkdir -p /skies-adsb/src
-	if [[ -f /skies-adsb/src/.env ]]; then
+	if [[ -f /skies-adsb/maps/data/.env ]]; then cp -f /skies-adsb/maps/data/.env /skies-adsb/src/.env; fi
+	if [[ -f /skies-adsb/src/.env ]] && grep -qe '^VITE_USE_EXISTING_ADSB=.*$' /skies-adsb/src/.env ; then
 	  sed -i 's|^\(VITE_USE_EXISTING_ADSB=\).*$|\1'"$SBS_SOURCE"'|g' /skies-adsb/src/.env
+  else
+		echo "VITE_USE_EXISTING_ADSB=$SBS_SOURCE" >> /skies-adsb/src/.env
 	fi
-	echo "VITE_USE_EXISTING_ADSB=$SBS_SOURCE" >> /skies-adsb/src/.env
+	cp -f /skies-adsb/src/.env /skies-adsb/maps/data/.env
 fi
 
 # Enable web access for all:
