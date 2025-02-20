@@ -10,6 +10,7 @@ services:
       - SBS_SOURCE=ultrafeeder:30003
     ports:
       - 5173:5173
+      - 30006:30006 # for websocketmake sure that ultrafeeder isnt using this port
     tmpfs:
       - /tmp
     volumes:
