@@ -4,21 +4,50 @@ source /scripts/common
 
 "${s6wrap[@]}" echo "[INFO] Starting Skies-ADSB version $(cat /.CONTAINER_VERSION)"
 
-# configure SBS source
 if [[ -z "$SBS_SOURCE" ]]; then
 	"${s6wrap[@]}" echo "[ERROR] SBS_SOURCE environment variable is not set. Cannot continue - container halted!"
 	exec sleep infinity
-else
-	mkdir -p /skies-adsb/src
-	if [[ -f /skies-adsb/maps/data/.env ]]; then cp -f /skies-adsb/maps/data/.env /skies-adsb/src/.env; fi
-	if [[ -f /skies-adsb/src/.env ]] && grep -qe '^VITE_USE_EXISTING_ADSB=.*$' /skies-adsb/src/.env ; then
-	  sed -i 's|^\(VITE_USE_EXISTING_ADSB=\).*$|\1'"$SBS_SOURCE"'|g' /skies-adsb/src/.env
-  else
-		echo "VITE_USE_EXISTING_ADSB=$SBS_SOURCE" >> /skies-adsb/src/.env
-	fi
-	cp -f /skies-adsb/src/.env /skies-adsb/maps/data/.env
 fi
 
+if [[ -z "$LAT" ]] || [[ -z "${LON:-$LONG}" ]]; then
+  "${s6wrap[@]}" echo "[ERROR] Must set your coordinates in \$LAT and \$LON. Cannot continue - container halted!"
+  # exec sleep infinity
+fi
+
+mkdir -p /skies-adsb/src
+touch /skies-adsb/src/.env
+
+if [[ -f /skies-adsb/maps/data/.env ]]; then cp -f /skies-adsb/maps/data/.env /skies-adsb/src/.env; fi
+
+source /skies-adsb/src/.env
+if [[ -f /skies-adsb/public/map-data/aerodromes.geojson ]] && \
+   [[ "$VITE_DEFAULT_ORIGIN_LATITUDE" == "$LAT" ]] && \
+	 [[ "$VITE_DEFAULT_ORIGIN_LONGITUDE" == "${LON:-$LONG}" ]]; then 
+	touch /run/gis.installed.ok
+fi
+
+# configure SBS source
+if grep -qe '^VITE_USE_EXISTING_ADSB=.*$' /skies-adsb/src/.env ; then
+	sed -i 's|^\(VITE_USE_EXISTING_ADSB=\).*$|\1'"$SBS_SOURCE"'|g' /skies-adsb/src/.env
+else
+	echo "VITE_USE_EXISTING_ADSB=$SBS_SOURCE" >> /skies-adsb/src/.env
+fi
+
+# configure lat/lon
+# write coords to env file:
+if grep -qe '^VITE_DEFAULT_ORIGIN_LATITUDE=.*$' /skies-adsb/src/.env ; then
+	sed -i 's|^\(VITE_DEFAULT_ORIGIN_LATITUDE=\).*$|\1'"$LAT"'|g' /skies-adsb/src/.env
+else
+	echo "VITE_DEFAULT_ORIGIN_LATITUDE=$LAT" >> /skies-adsb/src/.env
+fi
+if grep -qe '^VITE_DEFAULT_ORIGIN_LONGITUDE=.*$' /skies-adsb/src/.env ; then
+	sed -i 's|^\(VITE_DEFAULT_ORIGIN_LONGITUDE=\).*$|\1'"${LON:-$LONG}"'|g' /skies-adsb/src/.env
+else
+	echo "VITE_DEFAULT_ORIGIN_LONGITUDE=${LON:-$LONG}" >> /skies-adsb/src/.env
+fi
+
+cp -f /skies-adsb/src/.env /skies-adsb/maps/data/.env
+	
 # Enable web access for all:
 cat <<EOF >/skies-adsb/vite.config.js
 import { defineConfig } from "vite";
@@ -36,3 +65,5 @@ export default defineConfig({
     }
 })
 EOF
+
+touch /run/gis.installed.new

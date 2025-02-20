@@ -29,18 +29,14 @@ vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/hea
 vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/110m_physical/ne_110m_lakes.shx)
 vector+=(https://raw.githubusercontent.com/nvkelso/natural-earth-vector/refs/heads/master/110m_physical/ne_110m_rivers_lake_centerlines.shx)
 
-if [[ -z "$LAT" ]] || [[ -z "${LON:-$LONG}" ]]; then
-  "${s6wrap[@]}" echo "[ERROR] Must set your coordinates in \$LAT and \$LON. Cannot continue - container halted!"
-  # exec sleep infinity
-fi
+while [[ ! -f /run/gis.installed.ok ]] && [[ ! -f /run/gis.installed.new ]]; do
+  sleep 1
+done
 
-if [[ -f /skies-adsb/src/.env ]] && [[ -f /skies-adsb/public/map-data/aerodromes.geojson ]]; then
-  # we have files that should be OK as long as the LAT/LON hasn't changed
-  source /skies-adsb/src/.env
-  if [[ "$VITE_DEFAULT_ORIGIN_LATITUDE" == "$LAT" ]] && [[ "$VITE_DEFAULT_ORIGIN_LONGITUDE" == "${LON:-$LONG}" ]]; then
-    "${s6wrap[@]}" echo "[INFO] All vector and shapefiles have been installed previously. Continuing..."
-    exit 0
-  fi
+if [[ -f /run/gis.installed.ok ]]; then
+  "${s6wrap[@]}" echo "[INFO] Vector and Shape Files are installed and valid. Skipping re-installation"
+  rm -f /run/gis.installed.ok
+  exit 0
 else
   "${s6wrap[@]}" echo "[INFO] Need to download and install vector and shapefiles. This may take a while!"
 fi
@@ -69,24 +65,16 @@ if [[ ! -f /skies-adsb/maps/data/Class_Airspace.zip ]]; then
   fi
 fi
 
-# write coords to env file:
-mkdir -p /skies-adsb/src
-if [[ -f /skies-adsb/src/.env ]]; then
-  sed -i 's|^\(VITE_DEFAULT_ORIGIN_LATITUDE=.*\)$|#\1|g' /skies-adsb/src/.env
-  sed -i 's|^\(VITE_DEFAULT_ORIGIN_LONGITUDE=.*\)$|#\1|g' /skies-adsb/src/.env
-fi
-cat <<EOF >> /skies-adsb/src/.env
-VITE_DEFAULT_ORIGIN_LATITUDE=$LAT
-VITE_DEFAULT_ORIGIN_LONGITUDE=${LON:-$LONG}
-EOF
-
 "${s6wrap[@]}" echo "[INFO] Building Map Layers"
 cd /skies-adsb/maps || true
 sed -i 's|10m_cultural/10m_cultural|10m_cultural|g' build-map-layers.py # needed to make this work -- weirdness in py file
 sed -i 's|^python3 build-map-layers.py|python3 -u build-map-layers.py|g' ./build-map-layers.sh # make sure Python flushes buffers
 if ! "${s6wrap[@]}" stdbuf -oL ./build-map-layers.sh; then
 "${s6wrap[@]}" echo "[ERROR] Building Map Layers failed. Cannot continue - container halted!"
-  # exec sleep infinity
+  exec sleep infinity
 fi
+
+rm /run/gis.installed.new
+touch /run/gis.installed.ok
 
 "${s6wrap[@]}" echo "[INFO] Installation of vector and shapefiles was successful"
