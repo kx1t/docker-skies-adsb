@@ -1,20 +1,22 @@
 services:
   skies-adsb:
-    image: ghcr.io/sdr-enthusiasts/docker-skies-adsb
+    build: https://github.com/kx1t/docker-skies-adsb.git#dev
+#    image: ghcr.io/sdr-enthusiasts/docker-skies-adsb
     container_name: skies-adsb
     hostname: skies-adsb
     restart: always
     environment:
-      - LAT=xx.xxxxx
-      - LON=xx.xxxxx
-      - SBS_SOURCE=ultrafeeder:30003
+      - LAT=${FEEDER_LAT}
+      - LON=${FEEDER_LONG}
+      - SBS_SOURCE=ultrafeedet:30003
     ports:
       - 5173:5173
-      - 30006:30006 # for websocketmake sure that ultrafeeder isnt using this port
+      - 5000:5000
+      - 30006:30006
     tmpfs:
       - /tmp
     volumes:
-      - ./skies-adsb/data:/skies-adsb/map
+      - ./skies-adsb/data:/skies-adsb/maps/data
       - ./skies-adsb/map-data:/skies-adsb/public/map-data
       - "/etc/localtime:/etc/localtime:ro"
       - "/etc/timezone:/etc/timezone:ro"
