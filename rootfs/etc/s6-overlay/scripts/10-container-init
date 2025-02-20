@@ -31,6 +31,8 @@ export default defineConfig({
     publicDir: '../public',
     server: {
       allowedHosts: true,
+			strictPort: true,
+			cors: { origin: true }
     }
 })
 EOF
