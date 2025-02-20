@@ -94,7 +94,7 @@ EOF
 "${s6wrap[@]}" echo "[INFO] Building Map Layers"
 cd /skies-adsb/maps || true
 sed -i 's|10m_cultural/10m_cultural|10m_cultural|g' build-map-layers.py # needed to make this work -- weirdness in py file
-if ! "${s6wrap[@]}" ./build-map-layers.sh; then
+if ! "${s6wrap[@]}" stdbuf -oL ./build-map-layers.sh; then
 "${s6wrap[@]}" echo "[ERROR] Building Map Layers failed. Cannot continue - container halted!"
   # exec sleep infinity
 fi
