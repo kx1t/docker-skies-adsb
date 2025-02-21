@@ -1,6 +1,6 @@
 services:
   skies-adsb:
-    build: https://github.com/kx1t/docker-skies-adsb.git#dev
+    build: https://github.com/kx1t/docker-skies-adsb.git
 #    image: ghcr.io/sdr-enthusiasts/docker-skies-adsb
     container_name: skies-adsb
     hostname: skies-adsb
