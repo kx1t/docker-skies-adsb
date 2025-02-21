@@ -1,6 +1,6 @@
 services:
   skies-adsb:
-    build: https://github.com/kx1t/docker-skies-adsb.git#dev
+    build: https://github.com/kx1t/docker-skies-adsb.git
 #    image: ghcr.io/sdr-enthusiasts/docker-skies-adsb
     container_name: skies-adsb
     hostname: skies-adsb
@@ -8,7 +8,7 @@ services:
     environment:
       - LAT=${FEEDER_LAT}
       - LON=${FEEDER_LONG}
-      - SBS_SOURCE=ultrafeedet:30003
+      - SBS_SOURCE=ultrafeeder:30003
     ports:
       - 5173:5173
       - 5000:5000
